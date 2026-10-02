@@ -30,7 +30,7 @@ public class GameBootstrap : MonoBehaviour
 
     private void CreatePlayer()
     {
-        GameObject playerObject = null;
+        GameObject playerObject;
 
         if (playerPrefab != null)
         {
@@ -43,6 +43,9 @@ public class GameBootstrap : MonoBehaviour
             playerObject.transform.localScale = new Vector3(1f, 1f, 1f);
         }
 
+        playerObject.tag = "Player";
+        playerObject.transform.position = new Vector3(0f, 1f, 0f);
+
         var player = playerObject.GetComponent<PlayerController>();
         if (player == null)
         {
@@ -50,6 +53,5 @@ public class GameBootstrap : MonoBehaviour
         }
 
         player.Initialize(MundoActual);
-        playerObject.transform.position = new Vector3(0f, 1f, 0f);
     }
 }
