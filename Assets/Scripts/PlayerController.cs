@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -7,6 +8,12 @@ public class PlayerController : MonoBehaviour
     public int energia = 100;
     public int fuerza = 10;
     public int nivel = 1;
+    public int salud = 100;
+    public int maxSalud = 100;
+    public int ataque = 15;
+    public float rangoAtaque = 2.5f;
+    public float moveSpeed = 5f;
+    public float turnSpeed = 10f;
 
     private CharacterController controller;
     private Mundo mundo;
@@ -14,25 +21,26 @@ public class PlayerController : MonoBehaviour
     private Caceria caceria;
     private Cocina cocina;
     private Herrero herrero;
-
-    public float moveSpeed = 5f;
-    public float turnSpeed = 10f;
+    private InventorySystem inventario;
+    private CombatSystem combate;
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
-        pesca = new Pesca();
+        pesc a = new Pesca();
         caceria = new Caceria();
         cocina = new Cocina();
         herrero = new Herrero("luz", 1);
+        inventario = new InventorySystem();
+        combate = gameObject.AddComponent<CombatSystem>();
+        combate.Initialize(ataque, rangoAtaque, 0.5f);
     }
 
     public void Initialize(Mundo mundoActual)
     {
-        mundo = mundoActual;
-        if (mundo == null)
+        mundo = mundoActual ?? new Mundo();
+        if (mundo.regiones.Count == 0)
         {
-            mundo = new Mundo();
             mundo.InicializarMundo();
         }
     }
@@ -75,14 +83,19 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.K))
         {
-            var resources = new System.Collections.Generic.List<string> { "seta_lunar", "seta_espiritual" };
+            var resources = new List<string> { "seta_lunar", "seta_espiritual" };
             cocina.Cocinar(resources);
+            foreach (var item in resources)
+            {
+                inventario.AddItem(item);
+            }
         }
 
         if (Input.GetKeyDown(KeyCode.H))
         {
-            var armas = new System.Collections.Generic.List<string> { "lavacristalizada", "luzsagrada" };
+            var armas = new List<string> { "lavacristalizada", "luzsagrada" };
             var arma = herrero.ForjarArma(armas);
+            inventario.AddItem("Arma_" + arma.nivel);
             Debug.Log("Arma forjada: " + arma.tipo + " / nivel: " + arma.nivel);
         }
 
@@ -92,6 +105,60 @@ public class PlayerController : MonoBehaviour
             {
                 region.Explorar();
             }
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            AttackNearestEnemy();
+        }
+    }
+
+    public void Damage(int amount)
+    {
+        salud = Mathf.Max(0, salud - amount);
+        if (salud <= 0)
+        {
+            Debug.Log("Jugador derrotado");
+        }
+    }
+
+    public void Heal(int amount)
+    {
+        salud = Mathf.Min(maxSalud, salud + amount);
+    }
+
+    public void AddItem(string item)
+    {
+        inventario.AddItem(item);
+    }
+
+    public List<string> GetInventory()
+    {
+        return inventario.GetItems();
+    }
+
+    public void AttackNearestEnemy()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, rangoAtaque);
+        EnemyAI nearest = null;
+        float nearestDistance = Mathf.Infinity;
+
+        foreach (var collider in colliders)
+        {
+            var enemy = collider.GetComponent<EnemyAI>();
+            if (enemy == null || !enemy.enabled) continue;
+
+            float dist = Vector3.Distance(transform.position, collider.transform.position);
+            if (dist < nearestDistance)
+            {
+                nearest = enemy;
+                nearestDistance = dist;
+            }
+        }
+
+        if (nearest != null)
+        {
+            combate.PerformAttack(transform.position, nearest.transform.position, nearest.gameObject, ataque);
         }
     }
 }
