@@ -27,7 +27,15 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
-        pesc a = new Pesca();
+        if (controller == null)
+        {
+            controller = gameObject.AddComponent<CharacterController>();
+            controller.height = 2f;
+            controller.radius = 0.5f;
+            controller.center = new Vector3(0f, 1f, 0f);
+        }
+
+        pesca = new Pesca();
         caceria = new Caceria();
         cocina = new Cocina();
         herrero = new Herrero("luz", 1);
