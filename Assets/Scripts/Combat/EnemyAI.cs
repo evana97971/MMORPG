@@ -12,6 +12,7 @@ public class EnemyAI : MonoBehaviour
 
     private Transform target;
     private float nextAttackTime;
+    public QuestNPC questNPC;
 
     private void Start()
     {
@@ -19,6 +20,11 @@ public class EnemyAI : MonoBehaviour
         if (target == null)
         {
             target = GameObject.Find("Jugador")?.transform;
+        }
+
+        if (questNPC == null)
+        {
+            questNPC = FindObjectOfType<QuestNPC>();
         }
     }
 
@@ -36,7 +42,7 @@ public class EnemyAI : MonoBehaviour
             }
             else if (Time.time >= nextAttackTime)
             {
-                var player = target.GetComponent<PlayerController>();
+                PlayerController player = target.GetComponent<PlayerController>();
                 if (player != null)
                 {
                     player.Damage(damage);
@@ -51,6 +57,11 @@ public class EnemyAI : MonoBehaviour
         currentHealth -= amount;
         if (currentHealth <= 0)
         {
+            if (questNPC != null)
+            {
+                questNPC.RegisterDefeat();
+            }
+
             Destroy(gameObject);
             Debug.Log("Enemigo derrotado");
         }
